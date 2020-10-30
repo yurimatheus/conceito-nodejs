@@ -9,33 +9,24 @@ app.use(express.json());
 app.use(cors());
 
 const repositories = [];
-const likes = 0;
-const techs = [];
 
-// Middlewares
-
-// function idRepoExist(request, response, next) {
-//   const { id } = request.params;
-
-//   if (!repositoryIndex === id) {
-//     return response.status(400);
-//   } else {
-//     next();
-//   }
-  
-// }
-
-// Rotas
+// List the projects
 app.get("/repositories", (request, response) => {
-  const repositories = { id: uuid(), techs, title, url, likes };
   return response.json(repositories);
 });
 
+// Create a repository
 app.post("/repositories", (request, response) => {
 
-  const { title, url, techs, likes } = request.body;
+  const { title, url, techs } = request.body;
 
-  const repository = { id: uuid(), title, url, techs, likes };
+  const repository = {
+    id: uuid(),
+    title,
+    url,
+    techs,
+    likes: 0
+  };
 
   repositories.push(repository);
 
@@ -43,12 +34,11 @@ app.post("/repositories", (request, response) => {
 
 });
 
-app.put("/repositories/:id", idRepoExist, (request, response) => {
-  // Alterar apenas o title, url, techs com id igual ao id dos parâmetros da rota >> middleware
-  // Verificar se o id do repositório existe >> middleware (400)
+// Update repository 
+app.put("/repositories/:id", (request, response) => {
 
   const { id } = request.params;
-  const { title, url, techs, likes } = request.body;
+  const { title, url, techs } = request.body;
 
   const repositoryIndex = repositories.findIndex(repository => repository.id === id);
 
@@ -60,8 +50,7 @@ app.put("/repositories/:id", idRepoExist, (request, response) => {
     id,
     title,
     url,
-    techs,
-    likes
+    techs
   }
 
   repositories[repositoryIndex] = repository;
@@ -70,22 +59,36 @@ app.put("/repositories/:id", idRepoExist, (request, response) => {
 
 });
 
-app.delete("/repositories/:id", idRepoExist, (request, response) => {
-  // Deletar o repositório com o id presente nos parametros da rota >> middleware
-  // Verificar se o id do repositório existe >> middleware (400)
+// Delete repository
+app.delete("/repositories/:id", (request, response) => {
 
   const { id } = request.params;
-  return response.status(204);
+  
+  const repositoryIndex = repositories.findIndex(repository => repository.id === id);
+
+  if (repositoryIndex < 0) {
+    return response.status(400).json({ error: "Repository not found "});
+  }
+
+  repositories.splice(repositoryIndex, 1);
+  
+  return response.status(204).send();
 });
 
+// Add like a repository manually
 app.post("/repositories/:id/like", (request, response) => {
-  // A cada nova requisição é para adicionar um like (+1)
-  // Verificar se o id do repositório existe >> middleware (400)
-
+  
   const { id } = request.params;
 
-  return response.json(id);
+  const repository = repositories.find(repository => repository.id === id);
 
+  if (!repository) {
+    return response.status(400).json({ error: "Repository not found "});
+  }
+
+  repository.likes += 1;
+
+  return response.json(repository);
 });
 
 module.exports = app;
